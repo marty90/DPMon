@@ -17,7 +17,7 @@ DPMon can read data in various formats, including NetFlow-like CSV files and Tst
 
 ## Pre-requisites
 
-DPMon is a Python package and needs the following packages: `diffprivlib pandas numpy`.
+DPMon is a Python package and needs the following packages: `diffprivlib pandas numpy pandasql`.
 Moreover, when operating on Spark, it is necessary to pass a `pyspark.sql.SparkSession` object as a Spark entrypoint
 
 ## Supported data format
