@@ -22,7 +22,12 @@ Moreover, when operating on Spark, it is necessary to pass a `pyspark.sql.SparkS
 
 ## Supported data format
 
-To be done
+DPMon can read log files in two formats (so far):
+
+- Tstat: log files created by [Tstat](http://tstat.polito.it/), a passive meter exporting rich flow records with hundreds of features, including packet and byte volume, TCP RTT, domain name, etc.
+- NFDump: NetFlow records converted in `csv` using the standard NFDump tool. To convert a NetFlow database (created by NFCapd) in CSV, we assume you use the command `nfdump -r file -o extended -o csv`.
+
+Files must be available on the running machine in case of local processing and available to Spark Executors in case of Spark Execution mode.
 
 ## Usage
 
