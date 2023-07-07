@@ -1,0 +1,10 @@
+diffprivlib
+pandas
+numpy
+pandasql
+pyasn
+cachetools
+sphinx
+myst-parser
+linkify-it-py
+sphinx-rtd-theme
