@@ -14,7 +14,7 @@
    .. rubric:: {{ _('Methods') }}
 
    .. autosummary::
-   
+
    {% endif %}
    {% endblock %}
 
