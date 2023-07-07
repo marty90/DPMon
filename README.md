@@ -29,10 +29,35 @@ DPMon can read log files in two formats (so far):
 
 Files must be available on the running machine in case of local processing and available to Spark Executors in case of Spark Execution mode.
 
+
+### Flow direction
+
+DPMon protects the privacy of users, thus, the operator must specify who are the users. You must pay attentiont to this step, as misconfiguration may lead to undesired privacy leaks.
+
+For both supported data formats, the logs specify flow direction: in case of Tstat, there are the `c_isint` and `s_isint` columns, while for NFDump, there is the `dir` field. DPMon assumes users to be protected are those flagged as clients in Tstat and source of outgoing flows (and destination of incoming ones) in NFDump. Verify your data follows this convetions.
+
+As a consequence of the design, DPMon cannot operate at the same time with incoming and outgoing flows. When starting DPMon, you must specify if you want to run queries on incoming or outgoing flows. Then, DPMon will operate to protect the privacy of internal clients (i.e., your users).
+
+
+
+## Supported engines
+
+By default DPMon processes data locally using Pandas. This is call as `local` engine.
+
+It is possible to use the `spark` enging, so that one can leverage a big data cluster to process large quantities of data. Cluster set up and configuration is not part of this guide.
+
 ## Usage
 
-To be done
+To use DPMon, you must instantiate an object of the `dpmon.DPMon`. When creating the object, you must provide:
+- `path`: The path do the data to be analyzed. Can be a string. When using the `local` engine, `path` can be a list of paths. When using the `spark` engine, the path is in the Spark format, thus can include `*` and `{...}` expression
+- `data_format`: must specify the data format: `tstat` of `nfdump`
+- `accountant`: a DiffPrivLib `BudgetAccountant` that specifies the privacy budget to limit the information it is possible to extract from the data. Create, for example, with: `diffprivlib.BudgetAccountant(epsilon=1.0)`
+- `engine = "local"`: enging to be used: `local` or `spark`
+- `spark=None`: in case `engine = "spark"`, you must provide a `SparkSession` as a Spark entrypoint
+- `direction="outgoing"`: whether to focus on `outgoing` flows (those issued by internal clients to the Internet) or `ingoing` flows (those issued by any Internet endpoint towards an internal client). See previous section 
+- `ipasn_db=None`: the path of a file in `pyasn` format, used to map IP addresses to the corresponding ASN. If the file is provided, it is possible to make queries based on ASN - e.g., the volume to a specific ASN.
+- `head=None`: truncate the data to `head` lines. Useful for debugging.
 
 ## Limitations
 
-To be done
+DPMon is prototype, thus inspect it carefully before using it in a production environment. Moreover, it is a library to be used by the system administrator to extract data. It shall not be used directly by an external analyst. In other words, consider to build a web service on top of it, to allow external use and enforce policies and priviledges.
