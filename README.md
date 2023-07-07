@@ -17,7 +17,7 @@ DPMon can read data in various formats, including NetFlow-like CSV files and Tst
 
 ## Pre-requisites
 
-DPMon is a Python package and needs the following packages: `diffprivlib pandas numpy pandasql pyasn cachetools`.
+DPMon is a Python package and needs the following packages: `diffprivlib pandas numpy pandasql pyasn cachetools sphinx myst-parser linkify-it-py sphinx-rtd-theme`.
 Moreover, when operating on Spark, it is necessary to pass a `pyspark.sql.SparkSession` object as a Spark entrypoint
 
 ## Supported data format
@@ -48,15 +48,7 @@ It is possible to use the `spark` enging, so that one can leverage a big data cl
 
 ## Usage
 
-To use DPMon, you must instantiate an object of the `dpmon.DPMon`. When creating the object, you must provide:
-- `path`: The path do the data to be analyzed. Can be a string. When using the `local` engine, `path` can be a list of paths. When using the `spark` engine, the path is in the Spark format, thus can include `*` and `{...}` expression
-- `data_format`: must specify the data format: `tstat` of `nfdump`
-- `accountant`: a DiffPrivLib `BudgetAccountant` that specifies the privacy budget to limit the information it is possible to extract from the data. Create, for example, with: `diffprivlib.BudgetAccountant(epsilon=1.0)`
-- `engine = "local"`: enging to be used: `local` or `spark`
-- `spark=None`: in case `engine = "spark"`, you must provide a `SparkSession` as a Spark entrypoint
-- `direction="outgoing"`: whether to focus on `outgoing` flows (those issued by internal clients to the Internet) or `ingoing` flows (those issued by any Internet endpoint towards an internal client). See previous section 
-- `ipasn_db=None`: the path of a file in `pyasn` format, used to map IP addresses to the corresponding ASN. If the file is provided, it is possible to make queries based on ASN - e.g., the volume to a specific ASN.
-- `head=None`: truncate the data to `head` lines. Useful for debugging.
+To use DPMon, you must instantiate an object of the `dpmon.DPMon`, setting the total privacy budget. Then, you can use the class methods to run queries on the data, specifying the privacy budget to allocate to each query. Check the module documentation for details.
 
 ## Limitations
 

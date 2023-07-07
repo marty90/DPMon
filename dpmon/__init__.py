@@ -19,8 +19,43 @@ NFDUMP_BUILTIN_FILTER_INGOING = "dir == 0"
 NFDUMP_USER_COL_INGOING="da"
 
 class DPMon():
+
+    """
+    The main class for DPMon. Create on object of the DPMon class to make private queries.
+    
+    :param path: The path do the data to be analyzed. Can be a string. When using the ``local`` engine, ``path`` can be a list of paths. When using the ``spark`` engine, the path is in the Spark format, thus can include ``*`` and ``{...}`` expression
+    :type path: str
+    
+    :param data_format: Must specify the data format: ``tstat`` of ``nfdump``
+    :type data_format: str
+    
+    :param accountant: A DiffPrivLib ``BudgetAccountant`` that specifies the privacy budget to limit the information it is possible to extract from the data. Create, for example, with: ``diffprivlib.BudgetAccountant(epsilon=1.0)``
+    :type accountant: diffprivlib.BudgetAccountant
+    
+    :param engine: Engine to be used: ``local`` or ``spark``.
+        Default: ``"local"``
+    :type engine: str
+    
+    :param spark: In case ``engine = "spark"``, you must provide a ``SparkSession`` as a Spark entrypoint.
+                  Default: ``None``
+    :type spark: spark.sql.SparkSession
+    
+    :param direction: Whether to focus on ``outgoing`` flows (those issued by internal clients to the Internet) or ``ingoing`` flows (those issued by any Internet endpoint towards an internal client). See documentation for an explaination.
+                      Default: ``"outgoing"``
+    :type direction: str
+    
+    :param ipasn_db: the path of a file in ``pyasn`` format, used to map IP addresses to the corresponding ASN. If the file is provided, it is possible to make queries based on ASN - e.g., the volume to a specific ASN.
+                    Default: ``None``
+    :type ipasn_db: str
+    
+    :param head: Truncate the data to ``head`` lines. Useful for debugging.
+                    Default: ``None``
+    :type head: int
+    """
     
     def __init__(self, path, data_format, accountant, engine = "local", spark=None, direction="outgoing", ipasn_db=None, head=None):
+        """Constructor method
+        """        
         self.path = path
         self.data_format = data_format
         self.engine = engine
@@ -77,10 +112,20 @@ class DPMon():
                 
             
     def prepare_tstat_spark(self):
+        """
+        
+        :meta private:
+        """    
+    
         self.df = self.spark.read.csv(self.path, header = True, inferSchema=True, sep=' ')
         self.df = self.df.toDF ( *[ c.split("#")[-1].split(":")[0] for c in self.df.columns] )
         
     def prepare_tstat_local(self):
+        """
+        
+        :meta private:
+        """    
+    
         if isinstance(self.path, str):
             self.df = pd.read_csv(self.path, sep=' ', nrows=self.head)  
         elif isinstance(self.path, list):
@@ -89,16 +134,30 @@ class DPMon():
         
         
     def prepare_nfdump_spark(self):
+        """
+        
+        :meta private:
+        """    
+    
         self.df = self.spark.read.csv(self.path, header = True, inferSchema=True)
         
     def prepare_nfdump_local(self):
+        """
+        
+        :meta private:
+        """    
+    
         if isinstance(self.path, str):
             self.df = pd.read_csv(self.path, nrows=self.head)  
         elif isinstance(self.path, list):
             self.df = pd.concat((pd.read_csv(f) for f in self.path), ignore_index=True)        
         
     def private_query_spark(self, aggregation, metric, epsilon=1.0, bins=10, range=None, bounds=None):
-
+        """
+        
+        :meta private:
+        """
+        
         filtered = self.df.filter(self.builtin_filter)
         
         if self.ipasn_db:
@@ -147,7 +206,11 @@ class DPMon():
         
         
     def private_query_local(self, aggregation, metric, epsilon=1.0, bins=10, range=None, bounds=None):
-
+        """
+        
+        :meta private:
+        """
+        
         df = self.df
         filtered = pds.sqldf(f"SELECT * from df WHERE {self.builtin_filter}",           locals())
         
@@ -185,13 +248,37 @@ class DPMon():
                 raise TypeError('Invalid metric')
         
     def private_query(self, aggregation, metric, epsilon=1.0, bins=10, range=None, bounds=None):
+        """
+        
+        :meta private:
+        """
         if self.engine=="spark":
             return self.private_query_spark(aggregation=aggregation, metric=metric, epsilon=epsilon, bins=bins, range=range, bounds=bounds)
         elif self.engine=="local":
             return self.private_query_local(aggregation=aggregation, metric=metric, epsilon=epsilon, bins=bins, range=range, bounds=bounds)
         
     def volume_on_ip(self, ip, volume_direction="ingoing", count_flows=False, epsilon=1.0):
+        """
+        Obtain the traffic volume to a specific external IP address
+
+        :param ip: The IP address to query
+        :type ip: str
         
+        :param volume_direction: Whether to compute ingress (``"ingoing"``) or egress (``"outgoing"``) volume, in bytes.
+                                 Default: ``"ingoing"``
+        :type volume_direction: str
+
+        :param count_flows: Count the number of flows instead of volume. If set, ``"volume_direction"`` is ignored.
+                            Default: ``False``
+        :type count_flows: bool
+        
+        :param epsilon: The privacy budget to allocate for the query. Default: ``1.0``
+        :type epsilon: float
+        
+        :return: The volume in bytes of number of flows
+        :rtype: int
+
+        """            
         if not volume_direction in {"ingoing", "outgoing"}:
             raise TypeError('volume_direction must be one of: ' + ",".join(["ingoing", "outgoing"]) )
             
@@ -208,7 +295,27 @@ class DPMon():
                                   metric="sum", epsilon = epsilon))
     
     def volume_on_asn(self, asn, volume_direction="ingoing", count_flows=False, epsilon=1.0):
+        """
+        Obtain the traffic volume to a specific Autonomous System
+
+        :param asn: The AS number to query
+        :type asn: int
         
+        :param volume_direction: Whether to compute ingress (``"ingoing"``) or egress (``"outgoing"``) volume, in bytes.
+                                 Default: ``"ingoing"``
+        :type volume_direction: str
+
+        :param count_flows: Count the number of flows instead of volume. If set, ``"volume_direction"`` is ignored.
+                            Default: ``False``
+        :type count_flows: bool
+        
+        :param epsilon: The privacy budget to allocate for the query. Default: ``1.0``
+        :type epsilon: float
+        
+        :return: The volume in bytes of number of flows
+        :rtype: int
+
+        """        
         if not volume_direction in {"ingoing", "outgoing"}:
             raise TypeError('volume_direction must be one of: ' + ",".join(["ingoing", "outgoing"]) )
 
@@ -229,8 +336,31 @@ class DPMon():
             
         return int(self.private_query(aggregation = f"sum(CASE WHEN asn == '{asn}' THEN {volume_col} ELSE 0 END)", \
                                   metric="sum", epsilon = epsilon))
+
+
     
     def volume_on_domain(self, domain, volume_direction="ingoing", count_flows=False, epsilon=1.0):
+        """
+        Obtain the traffic volume to a specific domain
+
+        :param domain: The domain name to query
+        :type domain: str
+        
+        :param volume_direction: Whether to compute ingress (``"ingoing"``) or egress (``"outgoing"``) volume, in bytes.
+                                 Default: ``"ingoing"``
+        :type volume_direction: str
+
+        :param count_flows: Count the number of flows instead of volume. If set, ``"volume_direction"`` is ignored.
+                            Default: ``False``
+        :type count_flows: bool
+        
+        :param epsilon: The privacy budget to allocate for the query. Default: ``1.0``
+        :type epsilon: float
+        
+        :return: The volume in bytes of number of flows
+        :rtype: int
+
+        """
         
         if not volume_direction in {"ingoing", "outgoing"}:
             raise TypeError('volume_direction must be one of: ' + ",".join(["ingoing", "outgoing"]) )
