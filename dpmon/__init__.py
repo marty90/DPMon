@@ -259,7 +259,7 @@ class DPMon():
         
     def volume_on_ip(self, ip, volume_direction="ingoing", count_flows=False, epsilon=1.0):
         """
-        Obtain the traffic volume to a specific external IP address
+        Obtain the traffic volume to/from a specific external IP address
 
         :param ip: The IP address to query
         :type ip: str
@@ -296,7 +296,7 @@ class DPMon():
     
     def volume_on_asn(self, asn, volume_direction="ingoing", count_flows=False, epsilon=1.0):
         """
-        Obtain the traffic volume to a specific Autonomous System
+        Obtain the traffic volume to/from a specific Autonomous System
 
         :param asn: The AS number to query
         :type asn: int
@@ -341,7 +341,7 @@ class DPMon():
     
     def volume_on_domain(self, domain, volume_direction="ingoing", count_flows=False, epsilon=1.0):
         """
-        Obtain the traffic volume to a specific domain
+        Obtain the traffic volume to/from a specific domain
 
         :param domain: The domain name to query
         :type domain: str
