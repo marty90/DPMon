@@ -53,7 +53,10 @@ It is possible to use the `spark` engine, so that one can leverage a big data cl
 To use DPMon, you must instantiate an object of the `dpmon.DPMon`, setting the total privacy budget. Then, you can use the class methods to run queries on the data, specifying the privacy budget to allocate to each query.
 The various methods allow you to run different queries on the data, such as byte-wise volume, number of flows, etc.
 You can make global queries or filter data by server IP address, ASN or domain.
-Check the module documentation for details and the exhaustive list.
+
+Check the module [documentation](https://marty90.github.io/DPMon/index.html) for details and the exhaustive list.
+
+
 
 ## Limitations
 
