@@ -15,6 +15,8 @@ DPMon exploits the mechanisms of Differential Privacy to add noise to a query's 
 As network measurements are typically large, DPMon is designed to work above Apache Spark for scalable data processing, even if local processing is supported (but suitable only for small datasets).
 DPMon can read data in various formats, including NetFlow-like CSV files and Tstat log files
 
+**Autonomous System Mapping:** DPMon supports query on the server IP's autonomous system. To this end, it leverages the `pyasn` library. You must provide DPMon with a `pyasn` RIB file that containes the mapping between IPs and ASN. Please refer to [PyASN documentation](https://github.com/hadiasghari/pyasn) to obtain an up-to-date data file.
+
 ## Pre-requisites
 
 DPMon is a Python package and needs the following packages: `diffprivlib pandas numpy pandasql pyasn cachetools sphinx myst-parser linkify-it-py sphinx-rtd-theme`.
@@ -44,11 +46,14 @@ As a consequence of the design, DPMon cannot operate at the same time with incom
 
 By default DPMon processes data locally using Pandas. This is call as `local` engine.
 
-It is possible to use the `spark` enging, so that one can leverage a big data cluster to process large quantities of data. Cluster set up and configuration is not part of this guide.
+It is possible to use the `spark` engine, so that one can leverage a big data cluster to process large quantities of data. Cluster set up and configuration is not part of this guide.
 
 ## Usage
 
-To use DPMon, you must instantiate an object of the `dpmon.DPMon`, setting the total privacy budget. Then, you can use the class methods to run queries on the data, specifying the privacy budget to allocate to each query. Check the module documentation for details.
+To use DPMon, you must instantiate an object of the `dpmon.DPMon`, setting the total privacy budget. Then, you can use the class methods to run queries on the data, specifying the privacy budget to allocate to each query.
+The various methods allow you to run different queries on the data, such as byte-wise volume, number of flows, etc.
+You can make global queries or filter data by server IP address, ASN or domain.
+Check the module documentation for details and the exhaustive list.
 
 ## Limitations
 

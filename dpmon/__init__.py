@@ -18,6 +18,8 @@ NFDUMP_USER_COL_OUTGOING="sa"
 NFDUMP_BUILTIN_FILTER_INGOING = "dir == 0"
 NFDUMP_USER_COL_INGOING="da"
 
+TSTAT_ALLOWED_FEATURES="c_pkts_all c_rst_cnt c_ack_cnt c_ack_cnt_p c_bytes_uniq c_pkts_data c_bytes_all c_pkts_retx c_bytes_retx c_pkts_ooo c_syn_cnt c_fin_cnt s_pkts_all s_rst_cnt s_ack_cnt s_ack_cnt_p s_bytes_uniq s_pkts_data s_bytes_all s_pkts_retx s_bytes_retx s_pkts_ooo s_syn_cnt s_fin_cnt durat c_first s_first c_last s_last c_first_ack s_first_ack c_rtt_avg c_rtt_min c_rtt_max c_rtt_std c_rtt_cnt c_ttl_min c_ttl_max s_rtt_avg s_rtt_min s_rtt_max s_rtt_std s_rtt_cnt s_ttl_min s_ttl_max c_pkts_push s_pkts_push c_last_handshakeT s_last_handshakeT c_appdataT s_appdataT c_appdataB s_appdataB".split()
+
 class DPMon():
 
     """
@@ -152,7 +154,7 @@ class DPMon():
         elif isinstance(self.path, list):
             self.df = pd.concat((pd.read_csv(f) for f in self.path), ignore_index=True)        
         
-    def private_query_spark(self, aggregation, metric, epsilon=1.0, bins=10, range=None, bounds=None):
+    def private_query_spark(self, aggregation, metric, epsilon=1.0, bins=10, range=None, bounds=None, percent=None):
         """
         
         :meta private:
@@ -187,25 +189,35 @@ class DPMon():
         query_local_clean = query_local.drop(columns=self.user_col)
         if len(query_local_clean.columns) == 1:
             values = query_local_clean.iloc[:,0].values
+            bounds = bounds if bounds is not None else (np.nanmin(values), np.nanmax(values)) # Workaround for diffprilib bug
             if metric == "sum":
-                return diffprivlib.tools.sum(values, epsilon=epsilon, bounds=bounds, accountant=self.accountant)
+                return diffprivlib.tools.nansum(values, epsilon=epsilon, bounds=bounds, accountant=self.accountant)
             elif metric == "mean":
-                return diffprivlib.tools.mean(values, epsilon=epsilon, bounds=bounds, accountant=self.accountant)
+                return diffprivlib.tools.nanmean(values, epsilon=epsilon, bounds=bounds, accountant=self.accountant)
+            elif metric == "std":
+                return diffprivlib.tools.nanstd(values, epsilon=epsilon, bounds=bounds, accountant=self.accountant)
+            elif metric == "percentile":
+                return diffprivlib.tools.percentile(values, percent, epsilon=epsilon, bounds=bounds, accountant=self.accountant)
             elif metric == "histogram":
                 return diffprivlib.tools.histogram(values, epsilon=epsilon, bins=bins, range=range, accountant=self.accountant)
             else:
                 raise TypeError('Invalid metric')
         else:
             values = query_local_clean.values
+            bounds = bounds if bounds is not None else (np.nanmin(values), np.nanmax(values)) # Workaround for diffprilib bug
             if metric == "sum":
-                return diffprivlib.tools.sum(values, epsilon=epsilon, bounds=bounds, axis=0, accountant=self.accountant)
+                return diffprivlib.tools.nansum(values, epsilon=epsilon, bounds=bounds, axis=0, accountant=self.accountant)
             if metric == "mean":
-                return diffprivlib.tools.mean(values, epsilon=epsilon, bounds=bounds, axis=0, accountant=self.accountant)
+                return diffprivlib.tools.nanmean(values, epsilon=epsilon, bounds=bounds, axis=0, accountant=self.accountant)
+            elif metric == "std":
+                return diffprivlib.tools.nanstd(values, epsilon=epsilon, bounds=bounds, accountant=self.accountant)
+            elif metric == "percentile":
+                return diffprivlib.tools.percentile(values, percent, epsilon=epsilon, bounds=bounds, accountant=self.accountant)
             else:
                 raise TypeError('Invalid metric')
         
         
-    def private_query_local(self, aggregation, metric, epsilon=1.0, bins=10, range=None, bounds=None):
+    def private_query_local(self, aggregation, metric, epsilon=1.0, bins=10, range=None, bounds=None, percent=None):
         """
         
         :meta private:
@@ -230,32 +242,44 @@ class DPMon():
         del query [self.user_col]
         if len(query.columns) == 1:
             values = query.iloc[:,0].values
+            bounds = bounds if bounds is not None else (np.nanmin(values), np.nanmax(values)) # Workaround for diffprilib bug
             if metric == "sum":
-                return diffprivlib.tools.sum(values, epsilon=epsilon, bounds=bounds, accountant=self.accountant)
+                return diffprivlib.tools.nansum(values, epsilon=epsilon, bounds=bounds, accountant=self.accountant)
             elif metric == "mean":
-                return diffprivlib.tools.mean(values, epsilon=epsilon, bounds=bounds, accountant=self.accountant)
+                return diffprivlib.tools.nanmean(values, epsilon=epsilon, bounds=bounds, accountant=self.accountant)
+            elif metric == "std":
+                return diffprivlib.tools.nanstd(values, epsilon=epsilon, bounds=bounds, accountant=self.accountant)
+            elif metric == "percentile":
+                return diffprivlib.tools.percentile(values, percent, epsilon=epsilon, bounds=bounds, accountant=self.accountant)
             elif metric == "histogram":
                 return diffprivlib.tools.histogram(values, epsilon=epsilon, bins=bins, range=range, accountant=self.accountant)
             else:
                 raise TypeError('Invalid metric')
         else:
             values = query.values
+            bounds = bounds if bounds is not None else (np.nanmin(values), np.nanmax(values)) # Workaround for diffprilib bug
             if metric == "sum":
-                return diffprivlib.tools.sum(values, epsilon=epsilon, bounds=bounds, axis=0, accountant=self.accountant)
+                return diffprivlib.tools.nansum(values, epsilon=epsilon, bounds=bounds, axis=0, accountant=self.accountant)
             if metric == "mean":
-                return diffprivlib.tools.mean(values, epsilon=epsilon, bounds=bounds, axis=0, accountant=self.accountant)
+                return diffprivlib.tools.nanmean(values, epsilon=epsilon, bounds=bounds, axis=0, accountant=self.accountant)
+            elif metric == "std":
+                return diffprivlib.tools.nanstd(values, epsilon=epsilon, bounds=bounds, accountant=self.accountant)
+            elif metric == "percentile":
+                return diffprivlib.tools.percentile(values, percent, epsilon=epsilon, bounds=bounds, accountant=self.accountant)
             else:
                 raise TypeError('Invalid metric')
         
-    def private_query(self, aggregation, metric, epsilon=1.0, bins=10, range=None, bounds=None):
+    def private_query(self, aggregation, metric, epsilon=1.0, bins=10, range=None, bounds=None, percent=None):
         """
         
         :meta private:
         """
         if self.engine=="spark":
-            return self.private_query_spark(aggregation=aggregation, metric=metric, epsilon=epsilon, bins=bins, range=range, bounds=bounds)
+            return self.private_query_spark(aggregation=aggregation, metric=metric, epsilon=epsilon,
+                                            bins=bins, range=range, bounds=bounds, percent=percent)
         elif self.engine=="local":
-            return self.private_query_local(aggregation=aggregation, metric=metric, epsilon=epsilon, bins=bins, range=range, bounds=bounds)
+            return self.private_query_local(aggregation=aggregation, metric=metric, epsilon=epsilon,
+                                            bins=bins, range=range, bounds=bounds, percent=percent)
         
     def volume_on_ip(self, ip, volume_direction="ingoing", count_flows=False, epsilon=1.0):
         """
@@ -421,3 +445,149 @@ class DPMon():
             
         return self.private_query(aggregation = f"sum( {volume_col} )", \
                                   metric="histogram", bins=bins, range=range, epsilon = epsilon)
+    
+    def volume_historam_specific(self, volume_direction="ingoing", count_flows=False, bins=10, range=None, 
+                                 ip=None, asn=None, domain=None, epsilon=1.0):
+        """
+        Compute a histogram of the per-user traffic volume on given server IP, domain or ASN.
+        The three filters are considered together (i.e., they form an AND clause).
+
+        :param volume_direction: Whether to compute ingress (``"ingoing"``) or egress (``"outgoing"``) volume, in bytes.
+                                 Default: ``"ingoing"``
+        :type volume_direction: str
+
+        :param count_flows: Count the number of flows instead of volume. If set, ``"volume_direction"`` is ignored.
+                            Default: ``False``
+        :type count_flows: bool
+
+        :param bins: Number of bins of the histogram.
+                            Default: ``10``
+        :type bins: int
+
+        :param range: The lower and upper range of the bins. 
+                            Default: ``None``
+        :type range: (float,float)
+        
+        :param ip: The server IP to filter. 
+                            Default: ``None``
+        :type ip: str
+        
+        :param asn: The server ASN to filter. 
+                            Default: ``None``
+        :type asn: int
+        
+        :param domain: The server domain to filter. 
+                            Default: ``None``
+        :type domain: str
+        
+        :param epsilon: The privacy budget to allocate for the query. Default: ``1.0``
+        :type epsilon: float
+        
+        :return: A tuple ``(histo, bin_edges)``, where ``histo`` is the histogram and  ``bin_edges`` the boundaries
+        :rtype: tuple
+        """
+        
+        if not volume_direction in {"ingoing", "outgoing"}:
+            raise TypeError('volume_direction must be one of: ' + ",".join(["ingoing", "outgoing"]) )
+            
+        if self.data_format=="tstat":
+            volume_col = "s_bytes_all" if self.direction != volume_direction else "c_bytes_all"
+        elif self.data_format=="nfdump":
+            volume_col = "obyt" if self.direction != volume_direction else "ibyt"
+            # Assuming ibyt are generated by source and opkt by destination
+        
+        if count_flows:
+            volume_col=1
+            
+        if asn is not None and not self.ipasn_db:
+            raise RuntimeError("Must provide ipasn_db to use this function")
+            
+        if domain is not None and not self.data_format=="tstat":
+            raise RuntimeError("Must run on tstat data")
+            
+        condition_list = []
+        if domain is not None:
+            condition_list.append( f"c_tls_SNI == '{domain}'")
+        if ip is not None:
+            condition_list.append( f"{self.ipasn_col} == '{ip}'")
+        if asn is not None:
+            condition_list.append( f"asn == '{asn}'")
+
+        if len(condition_list) > 0:
+            condition = " AND ".join(condition_list)
+        else:
+            condition = "TRUE"
+        
+        return self.private_query(aggregation = f"sum( CASE WHEN {condition} THEN {volume_col} ELSE 0 END)", \
+                                  metric="histogram", bins=bins, range=range, epsilon = epsilon)
+    
+    
+    def flow_feature(self, feature, metric, ip=None, asn=None, domain=None, epsilon=1.0, percent=None):
+        """
+        Extract statistics on a flow feature (i.e., a log's column).
+        Notice that this can be used only with Tstat data and on a subset of columns.
+        Notice that DPMon first computes the average per-user value of the flow features.
+        Then it applies the requested statistic (mean, standard deviation or percentile) among the average per-user value.
+        This behavior is mandatory as Differential Privacy must protect users (not flows).
+        You can filter by server IP, ASN or Domain.
+        The three filters are considered together (i.e., they form an AND clause).
+
+        :param feature: The flow feature to compute statistics on.
+        :type feature: str
+
+        :param metric: The metric to compute. Can be ``mean``, ``std`` or ``percentile``
+        :type metric: str
+
+        :param percent: The percentile to compute in case ``metric==percentile``
+        :type percent: float
+
+        :param ip: The server IP to filter. 
+                            Default: ``None``
+        :type ip: str
+        
+        :param asn: The server ASN to filter. 
+                            Default: ``None``
+        :type asn: int
+        
+        :param domain: The server domain to filter. 
+                            Default: ``None``
+        :type domain: str
+        
+        :param epsilon: The privacy budget to allocate for the query. Default: ``1.0``
+        :type epsilon: float
+    
+        :return: The desired statistic
+        """
+          
+        if asn is not None and not self.ipasn_db:
+            raise RuntimeError("Must provide ipasn_db to use this function")
+            
+        if not self.data_format=="tstat":
+            raise RuntimeError("Must run on tstat data")
+
+        if not metric in {"mean", "std", "percentile"}:
+            raise RuntimeError("metric must be: 'mean', 'std' or 'percentile'")
+        if metric == "percentile" and percent is None:
+            raise RuntimeError("must specify percent when metric=percentile")            
+            
+        if not feature in TSTAT_ALLOWED_FEATURES:
+            raise RuntimeError("feature not allowed")        
+        
+        condition_list = []
+        if domain is not None:
+            condition_list.append( f"c_tls_SNI == '{domain}'")
+        if ip is not None:
+            condition_list.append( f"{self.ipasn_col} == '{ip}'")
+        if asn is not None:
+            condition_list.append( f"asn == '{asn}'")
+            
+        if len(condition_list) > 0:
+            condition = " AND ".join(condition_list)
+        else:
+            condition = "TRUE"
+            
+        return self.private_query(aggregation = f"avg( CASE WHEN {condition} THEN {feature} ELSE NULL END)", \
+                                  metric=metric, epsilon = epsilon, percent = percent)
+                                  
+                                  
+                                  
