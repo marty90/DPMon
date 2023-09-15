@@ -4,10 +4,10 @@ Differentially-private query engine for Passive Network Measurements
 ### Objective
 
 The goal of DPMon is not run privacy-preserving queries to a dataset of passive network measurements.
-It exploits differential privacy to the results of the query to control the contribution of a single individual to the query value.
-Thus, it mitigates the privacy risk in running and spreading network measurrments, allowing network practictioners and stakeholder to share valuable information about network operation, Quality of Service and cyber security threats.
+It applies Differential Privacy to the results of the query to control the contribution of a single individual to the query value.
+Thus, it mitigates the privacy risk of running and spreading network measurements, allowing network practitioners and stakeholders to share valuable information about network operation, Quality of Service and cyber security threats.
 
-DPMon is designed to operate on flow records, a data format where each TCP or UDP flow consitutes and entry. Each flow is identified by its 5-tuple (IP addresses, port numbers and L4 protocol used) and described by a (rich set) of features, such as packet number and size, domain name, performance metrics (e.g., TCP Round-Trip Time).
+DPMon is designed to operate on flow records, a data format where each TCP or UDP flow constitutes and entry. Each flow is identified by its 5-tuple (IP addresses, port numbers and L4 protocol used) and described by a (rich set) of features, such as packet number and size, domain name, performance metrics (e.g., TCP Round-Trip Time).
 
 ## Operation
 
@@ -15,7 +15,7 @@ DPMon exploits the mechanisms of Differential Privacy to add noise to a query's 
 As network measurements are typically large, DPMon is designed to work above Apache Spark for scalable data processing, even if local processing is supported (but suitable only for small datasets).
 DPMon can read data in various formats, including NetFlow-like CSV files and Tstat log files
 
-**Autonomous System Mapping:** DPMon supports query on the server IP's autonomous system. To this end, it leverages the `pyasn` library. You must provide DPMon with a `pyasn` RIB file that containes the mapping between IPs and ASN. Please refer to [PyASN documentation](https://github.com/hadiasghari/pyasn) to obtain an up-to-date data file.
+**Autonomous System Mapping:** DPMon supports query on the server IP's autonomous system. To this end, it leverages the `pyasn` library. You must provide DPMon with a `pyasn` RIB file that contains the mapping between IPs and ASN. Please refer to [PyASN documentation](https://github.com/hadiasghari/pyasn) to obtain an up-to-date data file.
 
 ## Pre-requisites
 
@@ -34,9 +34,9 @@ Files must be available on the running machine in case of local processing and a
 
 ### Flow direction
 
-DPMon protects the privacy of users, thus, the operator must specify who are the users. You must pay attentiont to this step, as misconfiguration may lead to undesired privacy leaks.
+DPMon protects the privacy of users, thus, the operator must specify who are the users. You must pay attention to this step, as misconfiguration may lead to undesired privacy leaks.
 
-For both supported data formats, the logs specify flow direction: in case of Tstat, there are the `c_isint` and `s_isint` columns, while for NFDump, there is the `dir` field. DPMon assumes users to be protected are those flagged as clients in Tstat and source of outgoing flows (and destination of incoming ones) in NFDump. Verify your data follows this convetions.
+For both supported data formats, the logs specify flow direction: in case of Tstat, there are the `c_isint` and `s_isint` columns, while for NFDump, there is the `dir` field. DPMon assumes users to be protected are those flagged as clients in Tstat and source of outgoing flows (and destination of incoming ones) in NFDump. Verify your data follows these conventions.
 
 As a consequence of the design, DPMon cannot operate at the same time with incoming and outgoing flows. When starting DPMon, you must specify if you want to run queries on incoming or outgoing flows. Then, DPMon will operate to protect the privacy of internal clients (i.e., your users).
 
@@ -60,4 +60,5 @@ Check the module [documentation](https://marty90.github.io/DPMon/index.html) for
 
 ## Limitations
 
-DPMon is prototype, thus inspect it carefully before using it in a production environment. Moreover, it is a library to be used by the system administrator to extract data. It shall not be used directly by an external analyst. In other words, consider to build a web service on top of it, to allow external use and enforce policies and priviledges.
+DPMon is prototype, thus inspect it carefully before using it in a production environment. Moreover, it is a library to be used by the system administrator to extract data. It shall not be used directly by an external analyst. In other words, consider to build a web service on top of it, to allow external use and enforce policies and privileges.
+
