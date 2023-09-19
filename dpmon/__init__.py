@@ -121,6 +121,7 @@ class DPMon():
     
         self.df = self.spark.read.csv(self.path, header = True, inferSchema=True, sep=' ')
         self.df = self.df.toDF ( *[ c.split("#")[-1].split(":")[0] for c in self.df.columns] )
+        _ = self.df.cache()
         
     def prepare_tstat_local(self):
         """
@@ -402,6 +403,50 @@ class DPMon():
             
         return int(self.private_query(aggregation = f"sum(CASE WHEN c_tls_SNI == '{domain}' THEN {volume_col} ELSE 0 END)", \
                                   metric="sum", epsilon = epsilon))
+    
+    def volume_on_domain_pattern(self, pattern, volume_direction="ingoing", count_flows=False, epsilon=1.0):
+        """
+        Obtain the traffic volume to/from a specific domain pattern.
+        The function searches for flows to a domain that matches the given pattern.
+        Pattern are defined in the SQL style, thus for example the ``%`` character represents any string of zero or more characters,
+        while ``_`` represents any single character. 
+        This function is useful to obtain the traffic volume by second level domain, e.g., ``%.googlevideo.com``
+
+        :param pattern: The domain pattern (in SQL syntax) to query
+        :type pattern: str
+        
+        :param volume_direction: Whether to compute ingress (``"ingoing"``) or egress (``"outgoing"``) volume, in bytes.
+                                 Default: ``"ingoing"``
+        :type volume_direction: str
+
+        :param count_flows: Count the number of flows instead of volume. If set, ``"volume_direction"`` is ignored.
+                            Default: ``False``
+        :type count_flows: bool
+        
+        :param epsilon: The privacy budget to allocate for the query. Default: ``1.0``
+        :type epsilon: float
+        
+        :return: The volume in bytes of number of flows
+        :rtype: int
+
+        """
+        
+        if not volume_direction in {"ingoing", "outgoing"}:
+            raise TypeError('volume_direction must be one of: ' + ",".join(["ingoing", "outgoing"]) )
+
+        if not self.data_format=="tstat":
+            raise RuntimeError("Must run volume_on_domain_pattern on tstat data")
+            
+        if not isinstance(pattern, str):
+            raise TypeError('pattern must be a string')
+            
+        volume_col = "s_bytes_all" if self.direction != volume_direction else "c_bytes_all"
+
+        if count_flows:
+            volume_col=1
+            
+        return int(self.private_query(aggregation = f"sum(CASE WHEN c_tls_SNI LIKE '{pattern}' THEN {volume_col} ELSE 0 END)", \
+                                  metric="sum", epsilon = epsilon))
 
     
     def volume_historam(self, volume_direction="ingoing", count_flows=False, bins=10, range=None, epsilon=1.0):
@@ -590,4 +635,51 @@ class DPMon():
                                   metric=metric, epsilon = epsilon, percent = percent)
                                   
                                   
-                                  
+    def user_count_specific(self, ip=None, asn=None, domain=None, epsilon=1.0):
+        """
+        Compute a the number of users on given server IP, domain or ASN.
+        In other words, it computes the number of users who, at least once, issued a flow to the an enpoint with the given characteristics.
+        The three filters are considered together (i.e., they form an AND clause).
+        It returns the number of user matching and the number of user non matching the filter.
+
+        :param ip: The server IP to filter. 
+                            Default: ``None``
+        :type ip: str
+        
+        :param asn: The server ASN to filter. 
+                            Default: ``None``
+        :type asn: int
+        
+        :param domain: The server domain to filter. 
+                            Default: ``None``
+        :type domain: str
+        
+        :param epsilon: The privacy budget to allocate for the query. Default: ``1.0``
+        :type epsilon: float
+        
+        :return: A tuple ``(a, b)``, where ``a`` is the number of users who never matched the filter and  ``n`` the number of users who did at least once.
+        :rtype: tuple
+        """
+        
+            
+        if asn is not None and not self.ipasn_db:
+            raise RuntimeError("Must provide ipasn_db to use this function")
+            
+        if domain is not None and not self.data_format=="tstat":
+            raise RuntimeError("Must run on tstat data")
+            
+        condition_list = []
+        if domain is not None:
+            condition_list.append( f"c_tls_SNI == '{domain}'")
+        if ip is not None:
+            condition_list.append( f"{self.ipasn_col} == '{ip}'")
+        if asn is not None:
+            condition_list.append( f"asn == '{asn}'")
+
+        if len(condition_list) > 0:
+            condition = " AND ".join(condition_list)
+        else:
+            condition = "TRUE"
+        
+        return self.private_query(aggregation = f"max( CASE WHEN {condition} THEN 1 ELSE 0 END)", \
+                                  metric="histogram", bins=2, epsilon = epsilon, range=[0,1] )[0] 

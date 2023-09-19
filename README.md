@@ -3,7 +3,7 @@ Differentially-private query engine for Passive Network Measurements
 
 ### Objective
 
-The goal of DPMon is not run privacy-preserving queries to a dataset of passive network measurements.
+The goal of DPMon is run privacy-preserving queries to a dataset of passive network measurements.
 It applies Differential Privacy to the results of the query to control the contribution of a single individual to the query value.
 Thus, it mitigates the privacy risk of running and spreading network measurements, allowing network practitioners and stakeholders to share valuable information about network operation, Quality of Service and cyber security threats.
 
