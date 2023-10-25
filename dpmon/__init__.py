@@ -198,6 +198,7 @@ class DPMon():
             elif metric == "std":
                 return diffprivlib.tools.nanstd(values, epsilon=epsilon, bounds=bounds, accountant=self.accountant)
             elif metric == "percentile":
+                values = values[~np.isnan(values)]
                 return diffprivlib.tools.percentile(values, percent, epsilon=epsilon, bounds=bounds, accountant=self.accountant)
             elif metric == "histogram":
                 return diffprivlib.tools.histogram(values, epsilon=epsilon, bins=bins, range=range, accountant=self.accountant)
@@ -213,6 +214,7 @@ class DPMon():
             elif metric == "std":
                 return diffprivlib.tools.nanstd(values, epsilon=epsilon, bounds=bounds, accountant=self.accountant)
             elif metric == "percentile":
+                values = values[~np.isnan(values)]
                 return diffprivlib.tools.percentile(values, percent, epsilon=epsilon, bounds=bounds, accountant=self.accountant)
             else:
                 raise TypeError('Invalid metric')
@@ -251,6 +253,7 @@ class DPMon():
             elif metric == "std":
                 return diffprivlib.tools.nanstd(values, epsilon=epsilon, bounds=bounds, accountant=self.accountant)
             elif metric == "percentile":
+                values = values[~np.isnan(values)]
                 return diffprivlib.tools.percentile(values, percent, epsilon=epsilon, bounds=bounds, accountant=self.accountant)
             elif metric == "histogram":
                 return diffprivlib.tools.histogram(values, epsilon=epsilon, bins=bins, range=range, accountant=self.accountant)
@@ -266,6 +269,7 @@ class DPMon():
             elif metric == "std":
                 return diffprivlib.tools.nanstd(values, epsilon=epsilon, bounds=bounds, accountant=self.accountant)
             elif metric == "percentile":
+                values = values[~np.isnan(values)]
                 return diffprivlib.tools.percentile(values, percent, epsilon=epsilon, bounds=bounds, accountant=self.accountant)
             else:
                 raise TypeError('Invalid metric')
@@ -567,7 +571,7 @@ class DPMon():
                                   metric="histogram", bins=bins, range=range, epsilon = epsilon)
     
     
-    def flow_feature(self, feature, metric, ip=None, asn=None, domain=None, epsilon=1.0, percent=None):
+    def flow_feature(self, feature, metric, ip=None, asn=None, domain=None, epsilon=1.0, percent=None, bins=10, range=None):
         """
         Extract statistics on a flow feature (i.e., a log's column).
         Notice that this can be used only with Tstat data and on a subset of columns.
@@ -580,7 +584,7 @@ class DPMon():
         :param feature: The flow feature to compute statistics on.
         :type feature: str
 
-        :param metric: The metric to compute. Can be ``mean``, ``std`` or ``percentile``
+        :param metric: The metric to compute. Can be ``mean``, ``std``, ``histogram`` or ``percentile``
         :type metric: str
 
         :param percent: The percentile to compute in case ``metric==percentile``
@@ -600,6 +604,14 @@ class DPMon():
         
         :param epsilon: The privacy budget to allocate for the query. Default: ``1.0``
         :type epsilon: float
+        
+        :param bins: Number of bins of the histogram in case ``metric==histogram``. .
+                            Default: ``10``
+        :type bins: int
+
+        :param range: The lower and upper range of the bins of the histogram in case ``metric==histogram``. 
+                            Default: ``None``
+        :type range: (float,float)
     
         :return: The desired statistic
         """
@@ -610,7 +622,7 @@ class DPMon():
         if not self.data_format=="tstat":
             raise RuntimeError("Must run on tstat data")
 
-        if not metric in {"mean", "std", "percentile"}:
+        if not metric in {"mean", "std", "percentile", "histogram"}:
             raise RuntimeError("metric must be: 'mean', 'std' or 'percentile'")
         if metric == "percentile" and percent is None:
             raise RuntimeError("must specify percent when metric=percentile")            
@@ -632,7 +644,7 @@ class DPMon():
             condition = "TRUE"
             
         return self.private_query(aggregation = f"avg( CASE WHEN {condition} THEN {feature} ELSE NULL END)", \
-                                  metric=metric, epsilon = epsilon, percent = percent)
+                                  metric=metric, epsilon = epsilon, percent = percent, bins=bins, range=range)
                                   
                                   
     def user_count_specific(self, ip=None, asn=None, domain=None, epsilon=1.0):
