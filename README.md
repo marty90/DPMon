@@ -9,6 +9,11 @@ Thus, it mitigates the privacy risk of running and spreading network measurement
 
 DPMon is designed to operate on flow records, a data format where each TCP or UDP flow constitutes and entry. Each flow is identified by its 5-tuple (IP addresses, port numbers and L4 protocol used) and described by a (rich set) of features, such as packet number and size, domain name, performance metrics (e.g., TCP Round-Trip Time).
 
+Below, is a sketch representing a typical DPMon deployment:
+
+<img width="600" alt="image" src="https://github.com/marty90/DPMon/assets/11349259/c15142ed-e495-43b1-935a-d12c0b4a2ad4">
+
+
 ## Operation
 
 DPMon exploits the mechanisms of Differential Privacy to add noise to a query's result. In particular, it uses differentially-private mean, sum and histogram as offered by the IBM DiffPrivLib library.
